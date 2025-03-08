@@ -1,0 +1,74 @@
+def edit_distance(X, Y, cost_copy=1, cost_replace=2, cost_delete=2, cost_insert=2, cost_twiddle=3, cost_kill=5):
+    m, n = len(X), len(Y)
+    T = [[0] * (n + 1) for _ in range(m + 1)]
+    operations = [[None] * (n + 1) for _ in range(m + 1)]
+    
+    # caso 1: transformar X vacío en Y (insertar todos los caracteres de Y)
+    for j in range(n + 1):
+        T[0][j] = j * cost_insert
+        operations[0][j] = 'Insert' if j > 0 else None
+    
+    # caso 2: transformar X en Y vacío (eliminar todos los caracteres de X)
+    for i in range(m + 1):
+        T[i][0] = i * cost_delete
+        operations[i][0] = 'Delete' if i > 0 else None
+    
+    #llenar tabla bottomup
+    for i in range(1, m + 1):
+        for j in range(1, n + 1):
+            cost = float('inf')
+            best_op = None
+            
+            # Copy (si los caracteres son iguales)
+            if X[i - 1] == Y[j - 1]:
+                if T[i - 1][j - 1] + cost_copy < cost:
+                    cost = T[i - 1][j - 1] + cost_copy
+                    best_op = 'Copy'
+            
+            # Replace
+            if T[i - 1][j - 1] + cost_replace < cost:
+                cost = T[i - 1][j - 1] + cost_replace
+                best_op = 'Replace'
+            
+            # Delete
+            if T[i - 1][j] + cost_delete < cost:
+                cost = T[i - 1][j] + cost_delete
+                best_op = 'Delete'
+            
+            # Insert
+            if T[i][j - 1] + cost_insert < cost:
+                cost = T[i][j - 1] + cost_insert
+                best_op = 'Insert'
+            
+            # Twiddle (intercambiar caracteres si es posible)
+            if i > 1 and j > 1 and X[i - 2] == Y[j - 1] and X[i - 1] == Y[j - 2]:
+                if T[i - 2][j - 2] + cost_twiddle < cost:
+                    cost = T[i - 2][j - 2] + cost_twiddle
+                    best_op = 'Twiddle'
+            
+            T[i][j] = cost
+            operations[i][j] = best_op
+    
+    # Kill (se aplica solo si el costo de matar toda la cadena es menor)
+    for i in range(m + 1):
+        if cost_kill < T[i][n]:
+            T[i][n] = cost_kill
+            operations[i][n] = 'Kill'
+    
+    return T, operations, T[m][n]  
+
+#ejemplo en clase
+X = "algorithm"
+Y = "altruistic"
+T, operations, min_cost = edit_distance(X, Y)
+
+# matriz de costos
+def print_table(T, X, Y):
+    print(" ", " ", *Y, sep="  ")
+    for i in range(len(T)):
+        row_label = " " if i == 0 else X[i - 1]
+        print(row_label, *T[i], sep="  ")
+
+print("Costo mínimo de edición:", min_cost)
+print("Matriz de costos:")
+print_table(T, X, Y)
