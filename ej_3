@@ -49,18 +49,48 @@ def edit_distance(X, Y, cost_copy=1, cost_replace=2, cost_delete=2, cost_insert=
             T[i][j] = cost
             operations[i][j] = best_op
     
-    # Kill (se aplica solo si el costo de matar toda la cadena es menor)
-    for i in range(m + 1):
-        if cost_kill < T[i][n]:
-            T[i][n] = cost_kill
-            operations[i][n] = 'Kill'
+    min_cost = T[m][n]
+    best_i = m
+    for i in range(m):
+        # si T[i][n] + cost_kill es mejor que lo que teníamos
+        if T[i][n] + cost_kill < min_cost:
+            min_cost = T[i][n] + cost_kill
+            best_i = i
     
     return T, operations, T[m][n]  
+
+def reconstruct_path(X, Y, operations):
+    i, j = len(X), len(Y)
+    path = []
+    
+    while i > 0 or j > 0:
+        op = operations[i][j]
+        path.append(op)
+        
+        if op == 'Copy' or op == 'Replace':
+            i, j = i - 1, j - 1
+        elif op == 'Delete':
+            i = i - 1
+        elif op == 'Insert':
+            j = j - 1
+        elif op == 'Twiddle':
+            i, j = i - 2, j - 2
+        elif op == 'Kill':
+            # Kill ignora lo que queda de X, y además es la última operación. 
+            # Por lo tanto, rompemos el ciclo:
+            break
+        else:
+            # En caso de no haber op (p.e. i=0 y j=0) 
+            # o haber llegado a un None inicial:
+            break
+    
+    return path[::-1]  # invertir la lista para tenerla del inicio al fin
 
 #ejemplo en clase
 X = "algorithm"
 Y = "altruistic"
 T, operations, min_cost = edit_distance(X, Y)
+optimal_path = reconstruct_path(X, Y, operations)
 
 # matriz de costos
 def print_table(T, X, Y):
@@ -69,6 +99,7 @@ def print_table(T, X, Y):
         row_label = " " if i == 0 else X[i - 1]
         print(row_label, *T[i], sep="  ")
 
-print("Costo mínimo de edición:", min_cost)
-print("Matriz de costos:")
+print("\nCosto mínimo de edición:", min_cost)
+print("\nMatriz de costos:")
 print_table(T, X, Y)
+print("\nSecuencia óptima de operaciones:", optimal_path)
